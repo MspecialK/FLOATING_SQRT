@@ -33,24 +33,39 @@ reg valid_out;
 reg error_out;
 
 reg [8:0] valore = 9'b110000000;
-reg [26:0] aux_b;
-reg [17:0] aux_y;
+reg [26:0] aux_b;                        //dim a + dim b + dim c 
+reg [17:0] aux_y;                        //dim a + dim b 
 reg [17:0] aux_x;
+
+reg [8:0] exponente_b, exponente_y, exponent_x;
 
 
 always@(posedge clk)///////////////////////////////////////////////////////////////////////////////////////SERIAL BLOCK
     begin
-        B<=Bnext;
-        x<=xnext;
-        Y<=Ynext;
-        y<=ynext;
-        state<=state_next;
-        counter<=counter_next;
-        mantissa_in<=mantissa_in_next;
-        exponent_in<=exponent_in_next;
-        sign_in<=sign_in_next;
+        if(rst)
+            begin 
+                valid_out=1'b0;
+                error_out=1'b0;
+                counter=0;
+                state=IDLE;
+                B=0;
+                x=0;
+                y=0;
+                Y=0;
+            end    
+        else
+            begin 
+                B<=Bnext;
+                x<=xnext;
+                Y<=Ynext;
+                y<=ynext;
+                state<=state_next;
+                counter<=counter_next;
+                mantissa_in<=mantissa_in_next;
+                exponent_in<=exponent_in_next;
+                sign_in<=sign_in_next;
+            end
     end
-
 
 always@(*) /////////////////////////////////////////////////////////////////////////////////////////// SEQUENTIAL BLOCK
     begin    
@@ -63,100 +78,95 @@ always@(*) /////////////////////////////////////////////////////////////////////
         mantissa_in_next=mantissa_in;
         exponent_in_next=exponent_in;
         sign_in_next= sign_in;
-    
-        if(rst)
-            begin 
-                valid_out=1'b0;
-                error_out=1'b0;
-                counter_next=0;
-                state_next=IDLE;
-                Bnext=0;
-                xnext=0;
-                ynext=0;
-                Ynext=0;
-            end
-        else
-            begin
-                case (state)
-                    IDLE: //////////////////////////////////////////////////////////////////////////////////////--IDLE STATE
-                        begin   
-                            if (sqrt_start)                
-                                begin
-                                    mantissa_in_next={1'b1,num_i[6:0]};
-                                    exponent_in_next=num_i[14:7];
-                                    sign_in_next = num_i[15]; 
-                                    if (num_i[7]) 
-                                        begin 
-                                            Bnext={1'b0,mantissa_in_next};  // Se e` dispari 0.1M
-                                            exponent_out=(exponent_in_next+1)>>1;
-                                        end   
-                                    else 
-                                        begin 
-                                            Bnext={mantissa_in_next,1'b0};  // Se e` pari 1.M0 
-                                            exponent_out=exponent_in_next>>1;
-                                        end        
+
+        case (state)
+            IDLE: //////////////////////////////////////////////////////////////////////////////////////--IDLE STATE
+                begin   
+                    if (sqrt_start)                
+                        begin
+                            mantissa_in_next={1'b1,num_i[6:0]};
+                            exponent_in_next=num_i[14:7];
+                            sign_in_next = num_i[15]; 
+                                if (num_i[7]) 
+                                    begin 
+                                        Bnext={1'b0,mantissa_in_next};  // Se e` dispari 0.1M
+                                        exponent_out=(exponent_in_next+1)>>1;
+                                    end   
+                                 else 
+                                    begin 
+                                        Bnext={mantissa_in_next,1'b0};  // Se e` pari 1.M0 
+                                        exponent_out=exponent_in_next>>1;
+                                    end        
                                         
-                                    Ynext=valore-(Bnext>>1); 
-                                    ynext=Ynext;
-                                    aux_x=(Bnext*ynext);
-                                    xnext=aux_x[17:9];
-                                    state_next=COMPUTATION;  
-                                end
-                        end
-          
-                    COMPUTATION: ////////////////////////////////////////////////////////////////////////--COMPUTATION STATE
-                        begin 
-                            if (sign_in) 
+                            Ynext=valore-(Bnext>>1); 
+                            ynext=Ynext;                            
+                            aux_x=(Bnext*Ynext);
+                            
+                            if (aux_x[17])
                                 begin 
-                                    state_next=FINE; 
-                                    valid_out=1'b0;
-                                    error_out=1'b1; 
-                                end        
-                            else
+                                    xnext=aux_x[17:9];
+                                    exponent_x=1;
+                                end
+                            else 
                                 begin
-                                    if (counter<=5)
-                                        begin 
-                                            aux_b=B*Y*Y;               // risultato di 27 bit 3*9
-                                            Bnext=aux_b[26:18];        // prendo i 9 bit piu` significativi 
+                                    xnext=aux_x[16:8];
+                                    exponent_x=0;
+                                end
+                            state_next=COMPUTATION;  
+                         end
+                  end
+          
+            COMPUTATION: ////////////////////////////////////////////////////////////////////////--COMPUTATION STATE
+                begin 
+                    if (sign_in) 
+                        begin 
+                            state_next=FINE; 
+                            valid_out=1'b0;
+                            error_out=1'b1; 
+                        end        
+                    else
+                        begin
+                            if (counter<=5)
+                                begin 
+                                    aux_b=B*Y*Y;               // risultato di 27 bit 3*9
+                                    Bnext=aux_b[25:17];        // prendo i 9 bit piu` significativi 
                                             //+3 zeri
-                                            Ynext=valore-(Bnext>>1);   // operazione su 9 bit;
+                                    Ynext=valore-(Bnext>>1);   // operazione su 9 bit;
                                             
-                                            aux_x=(x*Ynext);           // risultato in 18 bit
-                                            xnext=aux_x[17:9];         // prendo i 9 piu` significativi 
+                                    aux_x=x*Ynext;           // risultato in 18 bit
+                                    xnext=aux_x[17:9];         // prendo i 9 piu` significativi 
                                             //+2 zeri
-                                            aux_y=(y*Ynext);           // risultato in 18 bit
-                                            ynext=aux_y[17:9];         // prendo i 9 piu` significativi 
+                                    aux_y=y*Ynext;           // risultato in 18 bit
+                                    ynext=aux_y[17:9];         // prendo i 9 piu` significativi 
                                             //+ 2 zeri 
                                             
-                                            counter_next=counter+1;
-                                            
-                                            if (counter==5) 
-                                                begin 
-                                                    state_next=FINE;  
-                                                    mantissa_out=xnext;
-                                                    exponent_out=(exponent_in+1)>>1;
-                                                    sign_out=sign_in;
-                                                    valid_out=1'b1;
-                                                    error_out=1'b0;
-                                                end
+                                    counter_next=counter+1;
+                                        if (counter==5) 
+                                            begin 
+                                                state_next=FINE;  
+                                                mantissa_out=xnext;
+                                                exponent_out=(exponent_in+1)>>1;
+                                                sign_out=sign_in;
+                                                valid_out=1'b1;
+                                                error_out=1'b0;
+                                            end
                                         end 
                                 end
                          end
         
-                    FINE:   //////////////////////////////////////////////////////////////////////////////////-- FINAL STATE
-                        begin 
-                            state_next=IDLE;
-                            valid_out=1'b0;
-                            error_out=1'b0;
-                            counter_next=0;
-                            Bnext=0;
-                            xnext=0;
-                            ynext=0;    
-                            Ynext=0;
-                        end
-                endcase
+                FINE:   //////////////////////////////////////////////////////////////////////////////////-- FINAL STATE
+                    begin 
+                        state_next=IDLE;
+                        valid_out=1'b0;
+                        error_out=1'b0;
+                        counter_next=0;
+                        Bnext=0;
+                        xnext=0;
+                        ynext=0;    
+                        Ynext=0;
+                    end
+        endcase
     end     
-end
 
 assign error_o=error_out;
 assign valid_o=valid_out;
