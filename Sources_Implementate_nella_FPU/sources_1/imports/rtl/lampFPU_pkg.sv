@@ -69,7 +69,11 @@ package lampFPU_pkg;
 
 		FPU_EQ		= 4'd7,
 		FPU_LT		= 4'd8,
-		FPU_LE		= 4'd9
+		FPU_LE		= 4'd9,
+
+		FPU_SQRT    = 4'd10,
+		FPU_InvSQRT = 4'd11
+
 	} opcodeFPU_t;
 
 	function automatic logic [LAMP_FLOAT_S_DW+LAMP_FLOAT_E_DW+LAMP_FLOAT_F_DW-1:0] FUNC_splitOperand(input [LAMP_FLOAT_DW-1:0] op);
@@ -519,28 +523,54 @@ package lampFPU_pkg;
 		endcase
 	endfunction
 
-	function automatic logic[LAMP_APPROX_DW:0] FUNC_approxInvSqrt(
-						input [(2+LAMP_FLOAT_F_DW)-1:0] f_i
-				);
-						case(f_i[(2+LAMP_FLOAT_F_DW)-1-:LAMP_APPROX_DW])
-								'b0100    :    return 'b10110;
-								'b0101    :    return 'b10100;
-								'b0110    :    return 'b10010;
-								'b0111    :    return 'b10001;
-								'b1000    :    return 'b10000;
-								'b1001    :    return 'b01111;
-								'b1010    :    return 'b01110;
-								'b1011    :    return 'b01101;
-								'b1100    :    return 'b01101;
-								'b1101    :    return 'b01100;
-								'b1110    :    return 'b01100;
-								'b1111    :    return 'b01011;
-						endcase
-		endfunction
 
+	// NEW PART ADDED FOR SQRT ONLY
+		function automatic logic[LAMP_APPROX_DW-1+1:0] FUNC_approxInvSqrt(
+							input [(1+LAMP_FLOAT_F_DW)-1:0] f_i
+					);
+							case(f_i[(1+LAMP_FLOAT_F_DW)-1-:LAMP_APPROX_DW])
+									'b0100    :    return 'b10110;
+									'b0101    :    return 'b10100;
+									'b0110    :    return 'b10010;
+									'b0111    :    return 'b10001;
+									'b1000    :    return 'b10000;
+									'b1001    :    return 'b01111;
+									'b1010    :    return 'b01110;
+									'b1011    :    return 'b01101;
+									'b1100    :    return 'b01101;
+									'b1101    :    return 'b01100;
+									'b1110    :    return 'b01100;
+									'b1111    :    return 'b01011;
+							endcase
+			endfunction
 
+	    function automatic logic[4:0] FUNC_calcInfNanZeroResSqrt(input isZ_in, isInf_in, s_in, isSNAN_in, isQNAN_in);
+	        //logic isZeroRes     = isZ_in;
+	        //logic isNanRes      = isSNAN_in||isQNAN_in||(s_in&&~isZ_in);
+	        //logic isInfRes      = isInf_in&&~s_in;
+	        //logic SignRes       = s_in||isNanRes;  //il segno dei NAN � '1'
+	        //logic isNanInfValid = isInfRes||isNanRes;
 
+					logic isZeroRes     = 1'b0;
+					logic isNanRes      = 1'b0;
+					logic isInfRes      = 1'b0;
+					logic SignRes       = s_in;  //il segno dei NAN � '1'
+					logic isNanInfValid = 1'b1;
 
+					if (isZ_in) begin
+						isZeroRes = 1'b1;
+					end else if (s_in) begin
+						isNanRes  = 1'b1;
+					end else if (isInf_in) begin
+						isInfRes  = 1'b1;
+					end else if (isSNAN_in|isQNAN_in) begin
+						isNanRes  = 1'b1;
+						SignRes		= 1'b1;
+					end else begin
+						isNanInfValid = 1'b0;
+					end
+	        return {isNanInfValid, isZeroRes, isInfRes, isNanRes, SignRes};
+	    endfunction
 
 
 endpackage
