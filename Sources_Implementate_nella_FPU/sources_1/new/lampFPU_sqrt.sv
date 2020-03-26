@@ -221,7 +221,7 @@ begin
     //
     ///////////////////////////////////////////////////////////////////////////////////
 
-    {isCheckNanInfValid, isZeroRes, isCheckInfRes, isCheckNanRes, isCheckSignRes} = FUNC_calcInfNanZeroResSqrt(isZ_r, isInf_r, s_r, isSNAN_r, isQNAN_r);
+    {isCheckNanInfValid, isZeroRes, isCheckInfRes, isCheckNanRes, isCheckSignRes} = FUNC_calcInfNanZeroResSqrt(isZ_r, isInf_r, s_r, isSNAN_r, isQNAN_r, doSqrt_i, doInvSqrt_i);
 
     unique if (isZeroRes)
         {s_res, e_res, f_res} = {isCheckSignRes, ZERO_E_F, 5'b0};  // ZERO_E_F contiene sia esponente che mantissa, gli ultimi 5 bit sono quelli per il rounding
