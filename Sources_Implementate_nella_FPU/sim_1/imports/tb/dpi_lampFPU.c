@@ -255,7 +255,22 @@ DPI_fsqrt(unsigned int op1)
 	// return 32bit float encoding
 	return *((unsigned int*) &f_res);
 }
-
+//
+// inverse sqrt
+//
+unsigned int
+DPI_finvsqrt(unsigned int op1)
+{
+	//unsigned -> float
+	float f_op1 = *((float*) &op1);
+	// perform fsqrt
+	float f_res = 1 / sqrt(f_op1);
+	// return 32bit float encoding
+	return *((unsigned int*) &f_res);
+}
+////////////////////////////////////////////////////////////////////////////////
+//					IL MAIN NON COMMENTATO NON LO ABBIAMO SCRITTO NOI
+////////////////////////////////////////////////////////////////////////////////
 //int
 //main()
 //{

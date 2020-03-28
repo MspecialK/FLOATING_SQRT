@@ -28,8 +28,8 @@ module tb_lampFPU;
 	import "DPI-C" function int unsigned DPI_fle( input int unsigned op1, input int unsigned op2 );
 	import "DPI-C" function int unsigned DPI_i2f( input int unsigned op1 );
 	import "DPI-C" function int unsigned DPI_f2i( input int unsigned op1 );
-    import "DPI-C" function int unsigned DPI_fsqrt( input int unsigned op1 );///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+    import "DPI-C" function int unsigned DPI_fsqrt( input int unsigned op1 );/////////////////////////////////////////aggiunto da noi///////////////////////////////////////
+    import "DPI-C" function int unsigned DPI_finvsqrt( input int unsigned op1 );//////////////////////////////////////aggiunto da noi///////////////////////////////////////
 	parameter HALF_CLK_PERIOD_NS=20;
 
 	logic							clk;
@@ -92,7 +92,8 @@ module tb_lampFPU;
 //		TASK_testArith (FPU_SUB);
 //		TASK_testArith (FPU_MUL);
 //		TASK_testArith (FPU_DIV);
-        TASK_testSqrt(); /////////////////////////////////////////////////////////////////// poi aggiungeremno TASK_testInvSqrt();
+//        TASK_testSqrt(FPU_SQRT);    /////////////////////////////////////////////////////////aggiunto da noi//////////////////////////////////
+        TASK_testSqrt(FPU_INVSQRT); /////////////////////////////////////////////////////////aggiunto da noi//////////////////////////////////
 //		TASK_testCmp ();
 //		TASK_testI2f ();
 //		rndMode_i_tb	= 	FPU_RNDMODE_TRUNCATE;
@@ -101,7 +102,11 @@ module tb_lampFPU;
 		$finish;
 	end
 	
-	task TASK_testSqrt (); ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// FUNZIONE SCRITTA DA NOI
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	task TASK_testSqrt (input opcodeFPU_t opcode); 
 	    logic	[LAMP_FLOAT_S_DW-1:0]	sign;
 	    logic	[LAMP_FLOAT_E_DW-1:0]	exponent;
 	    logic	[LAMP_FLOAT_F_DW-1:0]	fraction;
@@ -124,11 +129,14 @@ module tb_lampFPU;
            fraction = (exponent>=0 && exponent<255) ? $random : $urandom_range(0,1)<<22 /*inf or qnan*/;
            op       = {sign , exponent, fraction};
            
-           tb_res   = DPI_fsqrt (op << (LAMP_INTEGER_DW - LAMP_FLOAT_DW));
+           case (opcode)
+            FPU_SQRT:    tb_res   = DPI_fsqrt (op << (LAMP_INTEGER_DW - LAMP_FLOAT_DW));
+            FPU_INVSQRT: tb_res   = DPI_finvsqrt (op << (LAMP_INTEGER_DW - LAMP_FLOAT_DW));
+           endcase
            $strobe ("@%0t - Start FPU operation: opcode: SQRT", $time);
            
            @(posedge clk);
-           opcodeFPU_i_tb   <=    FPU_SQRT;
+           opcodeFPU_i_tb   <=    opcode;
            op1_i_tb         <=    op;
            
            @(posedge clk);
@@ -157,8 +165,9 @@ module tb_lampFPU;
     $display("//");
     $display("//////////////////////////////////////////////////////////////////////////////////////////////////////////////////");
 	endtask  
+	
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
-// FINE NOSTRA FUNZIONE	
+// FINE NOSTRA FUNZIONE
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	task TASK_testArith (input opcodeFPU_t opcode);

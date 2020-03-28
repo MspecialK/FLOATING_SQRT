@@ -72,7 +72,7 @@ package lampFPU_pkg;
 		FPU_LE		= 4'd9,
 
 		FPU_SQRT    = 4'd10,
-		FPU_InvSQRT = 4'd11
+		FPU_INVSQRT = 4'd11
 
 	} opcodeFPU_t;
 
@@ -556,7 +556,7 @@ package lampFPU_pkg;
 					logic isInfRes      = 1'b0;
 					logic SignRes       = s_in;  //il segno dei NAN � '1'
 					logic isNanInfValid = 1'b1;
-                    
+
                     if (doSqrt) begin
                         if (isZ_in) begin
                             isZeroRes = 1'b1;
