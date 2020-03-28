@@ -92,7 +92,7 @@ module tb_lampFPU;
 //		TASK_testArith (FPU_SUB);
 //		TASK_testArith (FPU_MUL);
 //		TASK_testArith (FPU_DIV);
-//        TASK_testSqrt(FPU_SQRT);    /////////////////////////////////////////////////////////aggiunto da noi//////////////////////////////////
+        TASK_testSqrt(FPU_SQRT);    /////////////////////////////////////////////////////////aggiunto da noi//////////////////////////////////
         TASK_testSqrt(FPU_INVSQRT); /////////////////////////////////////////////////////////aggiunto da noi//////////////////////////////////
 //		TASK_testCmp ();
 //		TASK_testI2f ();
@@ -124,16 +124,17 @@ module tb_lampFPU;
 	       numTest++;
 	       $display("Test - %d",numTest);
 	       
-	       sign		= 0;//$urandom_range(0,1);
+	       sign		= $urandom_range(0,1);//(1) put sign = 0 to avoid all the NAN results due to negative sign; (2) sign = $urandom_range(0,1) if you want to check also the NAN special cases due to negative sign
            exponent = $urandom_range(0,255);
            fraction = (exponent>=0 && exponent<255) ? $random : $urandom_range(0,1)<<22 /*inf or qnan*/;
            op       = {sign , exponent, fraction};
            
+           tb_res   = DPI_fsqrt (op << (LAMP_INTEGER_DW - LAMP_FLOAT_DW));
            case (opcode)
             FPU_SQRT:    tb_res   = DPI_fsqrt (op << (LAMP_INTEGER_DW - LAMP_FLOAT_DW));
             FPU_INVSQRT: tb_res   = DPI_finvsqrt (op << (LAMP_INTEGER_DW - LAMP_FLOAT_DW));
            endcase
-           $strobe ("@%0t - Start FPU operation: opcode: SQRT", $time);
+           $strobe ("@%0t - Start FPU operation: opcode: %s", $time, opcode.name);
            
            @(posedge clk);
            opcodeFPU_i_tb   <=    opcode;

@@ -65,6 +65,8 @@ logic								   isZ_r;
 logic								   isInf_r;
 logic								   isSNAN_r;
 logic								   isQNAN_r;
+logic								   doSqrt_r;
+logic								   doInvSqrt_r;
 
 logic						           s_res;
 logic [LAMP_FLOAT_E_DW-1:0]	           e_res;
@@ -129,6 +131,8 @@ begin
         isInf_r        <= '0;
         isSNAN_r       <= '0;
         isQNAN_r       <= '0;
+        doSqrt_r       <= '0;
+        doInvSqrt_r    <= '0;
         s_res_o        <= '0;
         e_res_o        <= '0;
         f_res_o        <= '0;
@@ -142,11 +146,15 @@ begin
     end
     else
     begin
+        if(doSqrt_i|doInvSqrt_i) begin
         s_r            <= s_i;
         isZ_r          <= isZ_i;
         isInf_r        <= isInf_i;
         isSNAN_r       <= isSNAN_i;
         isQNAN_r       <= isQNAN_i;
+        doSqrt_r       <= doSqrt_i;
+        doInvSqrt_r    <= doInvSqrt_i;
+        end
         s_res_o        <= s_res;
         e_res_o        <= e_res;
         f_res_o        <= f_res;
@@ -196,7 +204,7 @@ begin
     else
     begin // FORMA 1.xxxxx
         stickyBit         =|f_res_preNorm[0 +:(2*(1+LAMP_FLOAT_F_DW)-1)-(1+1+LAMP_FLOAT_F_DW+3)];
-        f_res_postNorm    = {0, f_res_preNorm[2*(1+LAMP_FLOAT_F_DW)-1 -: LAMP_FLOAT_F_DW+5 - 1]}; // aggiungo 0 all'inizio ---> forma 01.xxx e rounding taglierà "01"
+        f_res_postNorm    = {1'b0, f_res_preNorm[2*(1+LAMP_FLOAT_F_DW)-1 -: LAMP_FLOAT_F_DW+5 - 1]}; // aggiungo 0 all'inizio ---> forma 01.xxx e rounding taglierà "01"
         //f_res_postNorm[1] = f_res_preNorm[(2*(1+LAMP_FLOAT_F_DW)-1)-(1+1+LAMP_FLOAT_F_DW+3)]|stickyBit;
         e_res_postNorm    = e_res_preNorm;
     end
@@ -221,7 +229,7 @@ begin
     //
     ///////////////////////////////////////////////////////////////////////////////////
 
-    {isCheckNanInfValid, isZeroRes, isCheckInfRes, isCheckNanRes, isCheckSignRes} = FUNC_calcInfNanZeroResSqrt(isZ_r, isInf_r, s_r, isSNAN_r, isQNAN_r, doSqrt_i, doInvSqrt_i);
+    {isCheckNanInfValid, isZeroRes, isCheckInfRes, isCheckNanRes, isCheckSignRes} = FUNC_calcInfNanZeroResSqrt(isZ_r, isInf_r, s_r, isSNAN_r, isQNAN_r, doSqrt_r, doInvSqrt_r);
 
     unique if (isZeroRes)
         {s_res, e_res, f_res} = {isCheckSignRes, ZERO_E_F, 5'b0};  // ZERO_E_F contiene sia esponente che mantissa, gli ultimi 5 bit sono quelli per il rounding

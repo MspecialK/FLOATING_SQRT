@@ -544,7 +544,7 @@ package lampFPU_pkg;
 							endcase
 			endfunction
 
-	    function automatic logic[4:0] FUNC_calcInfNanZeroResSqrt(input isZ_in, isInf_in, s_in, isSNAN_in, isQNAN_in,doSqrt,doInvSqrt);
+	    function automatic logic[4:0] FUNC_calcInfNanZeroResSqrt(input isZ_in, isInf_in, s_in, isSNAN_in, isQNAN_in, doSqrt, doInvSqrt);
 	        //logic isZeroRes     = isZ_in;
 	        //logic isNanRes      = isSNAN_in||isQNAN_in||(s_in&&~isZ_in);
 	        //logic isInfRes      = isInf_in&&~s_in;
@@ -557,35 +557,36 @@ package lampFPU_pkg;
 					logic SignRes       = s_in;  //il segno dei NAN � '1'
 					logic isNanInfValid = 1'b1;
 
-                    if (doSqrt) begin
-                        if (isZ_in) begin
-                            isZeroRes = 1'b1;
-                        end else if (s_in) begin
-                            isNanRes  = 1'b1;
-                        end else if (isInf_in) begin
-                            isInfRes  = 1'b1;
-                        end else if (isSNAN_in|isQNAN_in) begin
-                            isNanRes  = 1'b1;
-                            SignRes	  = 1'b1;
-                        end else begin
-                            isNanInfValid = 1'b0;
-                        end
-                    end else if (doInvSqrt) begin
-                        if (isZ_in) begin
-                            isInfRes = 1'b1;
-                        end else if (s_in) begin
-                            isNanRes = 1'b1;
-                        end else if (isInf_in) begin
-                            isZeroRes = 1'b1;
-                        end else if (isSNAN_in|isQNAN_in) begin
-                            isNanRes  = 1'b1;
-                            SignRes   = 1'b1;
-                        end else begin
-                            isNanInfValid = 1'b0;
-                        end
-                    end
-	        return {isNanInfValid, isZeroRes, isInfRes, isNanRes, SignRes};
-	    endfunction
+					if (doSqrt) begin
+						if (isZ_in) begin
+								isZeroRes = 1'b1;
+						end else if (s_in) begin
+								isNanRes  = 1'b1;
+						end else if (isInf_in) begin
+								isInfRes  = 1'b1;
+						end else if (isSNAN_in|isQNAN_in) begin
+								isNanRes  = 1'b1;
+								SignRes	  = 1'b1;
+						end else begin
+								isNanInfValid = 1'b0;
+						end
+					end else if (doInvSqrt) begin
+						if (isZ_in) begin
+								isInfRes = 1'b1;
+						end else if (s_in) begin
+								isNanRes = 1'b1;
+						end else if (isInf_in) begin
+								isZeroRes = 1'b1;
+						end else if (isSNAN_in|isQNAN_in) begin
+								isNanRes  = 1'b1;
+								SignRes   = 1'b1;
+						end else begin
+							 isNanInfValid = 1'b0;
+						end
+					end
 
+	        return {isNanInfValid, isZeroRes, isInfRes, isNanRes, SignRes};
+
+	    endfunction
 
 endpackage
