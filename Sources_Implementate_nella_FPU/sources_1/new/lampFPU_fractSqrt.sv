@@ -3,7 +3,7 @@
 // University: Politecnico di Milano
 //
 // Authors in alphabetical order:
-// (1) Kotsaba Mykhaylo <.....@.....>
+// (1) Kotsaba Mykhaylo <mykhaylo.kotsaba@mail.polimi.it>
 // (2) Melacarne Enrico <enrico.melacarne@mail.polimi.it>
 // 
 // Create Date: 23.02.2020 18:18:08
@@ -25,7 +25,7 @@
 // [DONE] (5) Utilize approxInvSqrt (non ho trovato un modo per riutilizzare approxRecip)
 // [    ] (6) Check/correct the use of the expression "r_r*r_r" instead of "r_r^2" what actually vivado does in the two cases? (It removes the use of a DSP for sure)
 // [    ] (7) Find information and introcude control of the convergence time
-// [    ] (8) FUN_approxInvSqrt() restituisce xxxxx per valori in input <1/2 perchè ho considerato che non verranno mai proposti in input, ma è una scelta reliable?
+// [    ] (8) FUN_approxInvSqrt() restituisce xxxxx per valori in input <1/2 perchÃ¨ ho considerato che non verranno mai proposti in input, ma Ã¨ una scelta reliable?
 // [    ] (9) ...?
 //////////////////////////////////////////////////////////////////////////////////
 
