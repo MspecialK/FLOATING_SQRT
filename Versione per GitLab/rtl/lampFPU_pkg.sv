@@ -523,8 +523,11 @@ package lampFPU_pkg;
 		endcase
 	endfunction
 
-
+	//////////////////////////////////////////////////////////////////////////////
 	// NEW PART ADDED FOR SQRT ONLY
+	/////////////////////////////////////////////////////////////////////////////
+
+		//FUNC_approxInvSqrt not used for the moment
 		function automatic logic[LAMP_APPROX_DW-1+1:0] FUNC_approxInvSqrt(
 							input [(1+LAMP_FLOAT_F_DW)-1:0] f_i
 					);
@@ -545,16 +548,11 @@ package lampFPU_pkg;
 			endfunction
 
 	    function automatic logic[4:0] FUNC_calcInfNanZeroResSqrt(input isZ_in, isInf_in, s_in, isSNAN_in, isQNAN_in, doSqrt, doInvSqrt);
-	        //logic isZeroRes     = isZ_in;
-	        //logic isNanRes      = isSNAN_in||isQNAN_in||(s_in&&~isZ_in);
-	        //logic isInfRes      = isInf_in&&~s_in;
-	        //logic SignRes       = s_in||isNanRes;  //il segno dei NAN � '1'
-	        //logic isNanInfValid = isInfRes||isNanRes;
 
 					logic isZeroRes     = 1'b0;
 					logic isNanRes      = 1'b0;
 					logic isInfRes      = 1'b0;
-					logic SignRes       = s_in;  //il segno dei NAN � '1'
+					logic SignRes       = s_in;
 					logic isNanInfValid = 1'b1;
 
 					if (doSqrt) begin
