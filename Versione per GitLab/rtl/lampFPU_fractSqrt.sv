@@ -19,7 +19,7 @@
 // The output is not normalized in this core, but in the sqrt module. 
 // 
 // To do:
-// 1) Time behaviour analysis and optimization
+// 1) Time-Post synthesis behaviour analysis and optimization
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -111,9 +111,6 @@ begin
         i_nxt           =   0;
         sqrt_next       =   doSqrt_i;
         inver_next      =   doInvSqrt_i;
-//        aux_res         =   b_nxt*y_nxt;
-//        if(doSqrt_i)    begin res_nxt = aux_res[2*(LAMP_FLOAT_F_DW+2)-2-:(LAMP_FLOAT_F_DW+2)]; end     
-//        else            begin res_nxt = y_nxt; end        //res_o_n depend on the selected operation  
     end
 end
       
@@ -133,7 +130,7 @@ begin
            
         end else begin
            
-           aux_res     =   res*y;   //Cambiamento
+           aux_res     =   res*y;   // Change respetc to the algorithm, we caalculate the res_next 
            res_nxt     =   aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-2-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];    
         
         end
