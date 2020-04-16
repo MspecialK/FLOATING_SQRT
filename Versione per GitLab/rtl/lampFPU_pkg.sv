@@ -552,6 +552,27 @@ package lampFPU_pkg;
 							endcase
 			endfunction
 
+			function automatic logic[LAMP_APPROX_DW-1+1:0] FUNC_approxSqrt(
+								input [(1+1+LAMP_FLOAT_F_DW)-1:0] f_i
+						);
+
+								case(f_i[(1+1+LAMP_FLOAT_F_DW)-1-:LAMP_APPROX_DW])
+										'b0000    :    return 'b00000;
+										'b0100    :    return 'b01011;
+										'b0101    :    return 'b01100;
+										'b0110    :    return 'b01101;
+										'b0111    :    return 'b01110;
+										'b1000    :    return 'b10000;
+										'b1001    :    return 'b10000;
+										'b1010    :    return 'b10001;
+										'b1011    :    return 'b10010;
+										'b1100    :    return 'b10011;
+										'b1101    :    return 'b10100;
+										'b1110    :    return 'b10101;
+										'b1111    :    return 'b10101;
+								endcase
+			endfunction
+
 	    function automatic logic[4:0] FUNC_calcInfNanZeroResSqrt(input isZ_in, isInf_in, s_in, isSNAN_in, isQNAN_in, doSqrt, doInvSqrt);
 
 					logic isZeroRes     = 1'b0;
