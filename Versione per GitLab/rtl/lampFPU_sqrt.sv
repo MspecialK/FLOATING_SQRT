@@ -170,16 +170,21 @@ end
 ///////////////////////////////////////////////////////////////////////////////////////
 assign fs_doSqrt    = doSqrt_i;
 assign fs_doInvSqrt = doInvSqrt_i;
+assign f_res_preNorm = fs_result;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // Combinational logic for mantissa computation (F) --preFractSqrt --preNorm
 ///////////////////////////////////////////////////////////////////////////////////////
 always_comb
 begin
-    if(extE_i[0])
-        fs_f = {extF_i , 1'b0};
+    if( (~extE_i[0]) | nlz_i[0] ) // Even Exponent or Odd Number of Leading Zeros
+        fs_f = {1'b0 , extF_i}; 
     else
-        fs_f = {1'b0 , extF_i};
+        fs_f = {extF_i , 1'b0};
+//    if(extE_i[0]|nlz_i[0])
+//        fs_f = {extF_i , 1'b0};
+//    else
+//        fs_f = {1'b0 , extF_i};
 end
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -188,9 +193,9 @@ end
 always_comb
 begin
     if(doSqrt_i)
-        e_res_preNorm =   (LAMP_FLOAT_E_BIAS-1)/2 + ((extE_i-nlz_i)>>1) + 1; 
+        e_res_preNorm =   (LAMP_FLOAT_E_BIAS-1-NLZ_CEIL)/2 + ((NLZ_CEIL+extE_i-nlz_i)>>1) + 1; 
     else if(doInvSqrt_i)
-        e_res_preNorm = 3*(LAMP_FLOAT_E_BIAS-1)/2 - ((extE_i-nlz_i)>>1) + 1;
+        e_res_preNorm = (3*LAMP_FLOAT_E_BIAS-3+NLZ_CEIL)/2 - ((NLZ_CEIL+extE_i-nlz_i)>>1) + 1;
 end
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -198,7 +203,7 @@ end
 ///////////////////////////////////////////////////////////////////////////////////////
 always_comb
 begin
-    f_res_preNorm = fs_result;
+    //f_res_preNorm = fs_result;
     if(~f_res_preNorm[2*(1+LAMP_FLOAT_F_DW)-2])
     begin // CASE 00.1xxxx ----> 01.xxxx
         stickyBit         =|f_res_preNorm[0 +:2*(1+LAMP_FLOAT_F_DW)-(LAMP_FLOAT_F_DW+5-1)-1];

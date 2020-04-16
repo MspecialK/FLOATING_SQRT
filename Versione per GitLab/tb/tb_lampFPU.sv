@@ -88,17 +88,17 @@ module tb_lampFPU;
 //	        TASK_doFPU_op();
 //			@(posedge clk);
 //		end
-		rndMode_i_tb	= 	FPU_RNDMODE_NEAREST;
-		TASK_testArith (FPU_ADD);
-		TASK_testArith (FPU_SUB);
-		TASK_testArith (FPU_MUL);
-		TASK_testArith (FPU_DIV);
+		rndMode_i_tb	= 	FPU_RNDMODE_TRUNCATE;
+//		TASK_testArith (FPU_ADD);
+//		TASK_testArith (FPU_SUB);
+//		TASK_testArith (FPU_MUL);
+//		TASK_testArith (FPU_DIV);
         TASK_testSqrt  (FPU_SQRT);
         TASK_testSqrt  (FPU_INVSQRT);
-		TASK_testCmp ();
-		TASK_testI2f ();
-		rndMode_i_tb	= 	FPU_RNDMODE_TRUNCATE;
-		TASK_testF2i ();
+//		TASK_testCmp ();
+//		TASK_testI2f ();
+//		rndMode_i_tb	= 	FPU_RNDMODE_TRUNCATE;
+//		TASK_testF2i ();
 		repeat(200) @(posedge clk);
 		$finish;
 	end

@@ -527,11 +527,16 @@ package lampFPU_pkg;
 	// NEW PART ADDED FOR SQRT ONLY
 	/////////////////////////////////////////////////////////////////////////////
 
+		//Some Definitions
+		parameter NLZ_CEIL = LAMP_FLOAT_F_DW+1;
+
+
 		//FUNC_approxInvSqrt not used for the moment
 		function automatic logic[LAMP_APPROX_DW-1+1:0] FUNC_approxInvSqrt(
-							input [(1+LAMP_FLOAT_F_DW)-1:0] f_i
+							input [(1+1+LAMP_FLOAT_F_DW)-1:0] f_i
 					);
-							case(f_i[(1+LAMP_FLOAT_F_DW)-1-:LAMP_APPROX_DW])
+							case(f_i[(1+1+LAMP_FLOAT_F_DW)-1-:LAMP_APPROX_DW])
+									'b0000    :    return 'b00000;
 									'b0100    :    return 'b10110;
 									'b0101    :    return 'b10100;
 									'b0110    :    return 'b10010;

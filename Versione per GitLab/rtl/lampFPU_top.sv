@@ -693,6 +693,7 @@ output	logic							isReady_o;
             .extF_i                 (extShF_op1_r),
             .extE_i                 (extE_op1_r),
             .nlz_i                  (nlz_op1_r),
+            .isZ_i				    (isZ_op1_r),
             .isInf_i                (isInf_op1_r),
             .isSNAN_i               (isSNAN_op1_r),
             .isQNAN_i               (isQNAN_op1_r),

@@ -30,7 +30,7 @@ module lampFPU_fractSqrt(
 );
 
 import lampFPU_pkg::*;
-localparam IDLE=1'b0, COMPUTATION=1'b1;  
+localparam IDLE='d0, STATE1='d1, STATE2='d2;  
 
 //Input and Outputs
 input                                           clk;        
@@ -43,12 +43,13 @@ output logic                                    valid_o;                   //Val
 
 //Internal wires 
 logic                                                        sqrt,sqrt_next,inver,inver_next;
-logic                                                        ss,ss_nxt;                 //State counter and next_state counter. 1 bit because we have only two states.
+logic           [1:0]                                        ss,ss_nxt;                 //State counter and next_state counter. 1 bit because we have only two states.
 logic           [LAMP_FLOAT_F_DW+1+LAMP_PREC_DW:0]           b,b_nxt;                     
-logic           [LAMP_FLOAT_F_DW+1+LAMP_PREC_DW:0]           y,y_nxt;                       
+logic           [LAMP_FLOAT_F_DW+1+LAMP_PREC_DW:0]           y,y_nxt;
+logic           [2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-1:0]     y_sqr,y_sqr_nxt;                    
 logic           [3*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-1:0]     aux_b;                     //Auxiliar register to store the multiplication for the B parameter.                     
 logic           [LAMP_FLOAT_F_DW+1+LAMP_PREC_DW:0]           res,res_nxt;          
-logic           [2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-1:0]     aux_res;                   //Auxiliar register to store the multiplication for the Result parameter.   
+logic           [2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-1:0]     aux_res;                   //Auxiliar register to store the multiplication for the Result parameter.
 
 logic           [2*(LAMP_FLOAT_F_DW+1)-1:0]                  result_o_nxt;
 logic                                                        valid_o_nxt;
@@ -70,6 +71,7 @@ begin
     b           <= 0;
     res         <= 0;
     y           <= 0;
+    y_sqr       <= 0;
     result_o    <= 0;
 end    
 else
@@ -79,6 +81,7 @@ begin
     b           <= b_nxt;
     res         <= res_nxt;
     y           <= y_nxt;
+    y_sqr       <= y_sqr_nxt;
     ss          <= ss_nxt;
     i           <= i_nxt;
     valid_o     <= valid_o_nxt;
@@ -86,67 +89,84 @@ begin
 end
 end
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           SEQUENTIAL BLOCK
+//                                                                                         COMBINATIONAL BLOCK
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 always @(*) 
 begin    
 b_nxt         =   b; 
 y_nxt         =   y;
-res_nxt       =   res;  
+y_sqr_nxt     =   y_sqr;
+res_nxt       =   res; 
 
 valid_o_nxt   =   1'b0;
 ss_nxt        =   ss;
 i_nxt         =   i;
-result_o_nxt      =   16'b0000000000000000;
+result_o_nxt  =   16'b0000000000000000;
 
 case (ss)
 IDLE: /////////////////////////////////////////////////////////////////////////////////////// IDLE STATE
 begin   
     if (doSqrt_i || doInvSqrt_i)                
-    begin        
+    begin                  
+        ss_nxt          =   STATE1; 
+         
         b_nxt           =   f_i << LAMP_PREC_DW;
-        y_nxt           =   (2'b11<<(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2-2)) - (b_nxt>>1);                        
-        ss_nxt          =   COMPUTATION;                              
+        y_nxt           =   FUNC_approxInvSqrt(f_i) << (LAMP_FLOAT_F_DW+1+LAMP_PREC_DW+1) - (LAMP_APPROX_DW+1);
+        y_sqr_nxt       =   y_nxt*y_nxt;                             
         i_nxt           =   0;
+        
         sqrt_next       =   doSqrt_i;
         inver_next      =   doInvSqrt_i;
+        
     end
 end
       
-COMPUTATION: ///////////////////////////////////////////////////////////////////////// COMPUTATION STATE
-begin 
-    if (i<=6)
-    begin                
-        if (i==0) begin
+STATE1: ///////////////////////////////////////////////////////////////////////// COMPUTATION STATE1
+begin        
+               
+    ss_nxt  =   STATE2;   
         
-           aux_res=b*y;
-           
-           if(sqrt) begin 
-                res_nxt = aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-2-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];
-           end else if (inver) begin 
-                res_nxt = y; 
-           end    
-           
-        end else begin
-           
-           aux_res     =   res*y;   // Change respetc to the algorithm, we caalculate the res_next 
-           res_nxt     =   aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-2-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];    
+    aux_b   =   b*y_sqr;
+    b_nxt   =   aux_b[3*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-3-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];
+            
+    if (i == 0) begin
         
+        aux_res=b*y;
+        if(sqrt) begin 
+            res_nxt = aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-2-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];
+        end else if (inver) begin 
+            res_nxt = y; 
         end
         
-        aux_b       =   b*y*y;
-        b_nxt       =   aux_b[3*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-3-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];
-        y_nxt       =   (2'b11<<(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2-2)) - (b_nxt>>1);  
-        i_nxt       =   i+1;  
-              
-        if (i == 5)  begin 
-           valid_o_nxt   =   1'b1;   //Go back to IDLE, we set the valid_o and we are ready in the same clock cycle to start another operation
-           ss_nxt        =   IDLE;  
-           result_o_nxt  =   aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-1-:(2*(LAMP_FLOAT_F_DW+1))];  //Returning the 16 most significant bits
-        end
-    end 
+    end else begin
+            
+        aux_res     =   res*y;   // Change respect to the algorithm, we calculate the res_next 
+        res_nxt     =   aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-2-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];    
+            
+    end   
+    
+    if (i == 2) begin
+        
+        ss_nxt        =   IDLE;
+        
+        valid_o_nxt   =   1'b1;   //Go back to IDLE, we set the valid_o and we are ready in the same clock cycle to start another operation
+        result_o_nxt  =   aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-1-:(2*(LAMP_FLOAT_F_DW+1))];  //Returning the 16 most significant bits
+    
+    end      
+    
 end
+STATE2: ///////////////////////////////////////////////////////////////////////// COMPUTATION STATE2
+begin
+
+    ss_nxt      =   STATE1;
+    
+    y_nxt       =   (2'b11<<(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2-2)) - (b>>1);
+    y_sqr_nxt   =   y_nxt*y_nxt;
+    i_nxt       =   i+1;  
+    
+end
+
 endcase 
 
 end
