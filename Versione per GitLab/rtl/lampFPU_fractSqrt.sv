@@ -97,7 +97,9 @@ begin
 b_nxt         =   b; 
 y_nxt         =   y;
 y_sqr_nxt     =   y_sqr;
-res_nxt       =   res; 
+res_nxt       =   res;
+sqrt_next     =   sqrt;
+inver_next    =   inver;
 
 valid_o_nxt   =   1'b0;
 ss_nxt        =   ss;
@@ -131,10 +133,9 @@ begin
     b_nxt   =   aux_b[3*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-3-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];
             
     if (i == 0) begin
-        
         aux_res=b*y;
-        if(sqrt) begin 
-            res_nxt = aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-2-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];
+        if(sqrt) begin
+            res_nxt =  aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-2-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];
         end else if (inver) begin 
             res_nxt = y; 
         end

@@ -89,7 +89,7 @@ logic							       isOverflow;
 logic							       isUnderflow;
 logic						           isToRound;
 
-logic [LAMP_FLOAT_E_DW-1:0]	           e_res_postNorm, e_res_preNorm;
+logic [LAMP_FLOAT_E_DW-1:0]	           e_res_postNorm, e_res_preNorm_r, e_res_preNorm;
 logic [LAMP_FLOAT_F_DW+5-1:0]	       f_res_postNorm;
 logic [2*(1+LAMP_FLOAT_F_DW)-1:0]      f_res_preNorm;
 logic                                  stickyBit;
@@ -129,39 +129,41 @@ always_ff @(posedge clk)
 begin
     if(rst)
     begin
-        s_r            <= '0;
-        isZ_r          <= '0;
-        isInf_r        <= '0;
-        isSNAN_r       <= '0;
-        isQNAN_r       <= '0;
-        doSqrt_r       <= '0;
-        doInvSqrt_r    <= '0;
-        s_res_o        <= '0;
-        e_res_o        <= '0;
-        f_res_o        <= '0;
-        valid_o        <= '0;
-        isOverflow_o   <= '0;
-        isUnderflow_o  <= '0;
-        isToRound_o    <= '0;
+        s_r             <= '0;
+        isZ_r           <= '0;
+        isInf_r         <= '0;
+        isSNAN_r        <= '0;
+        isQNAN_r        <= '0;
+        doSqrt_r        <= '0;
+        doInvSqrt_r     <= '0;
+        e_res_preNorm_r <= '0;
+        s_res_o         <= '0;
+        e_res_o         <= '0;
+        f_res_o         <= '0;
+        valid_o         <= '0;
+        isOverflow_o    <= '0;
+        isUnderflow_o   <= '0;
+        isToRound_o     <= '0;
     end
     else
     begin
+        s_r             <= s_i;
+        isZ_r           <= isZ_i;
+        isInf_r         <= isInf_i;
+        isSNAN_r        <= isSNAN_i;
+        isQNAN_r        <= isQNAN_i;
         if(doSqrt_i|doInvSqrt_i) begin
-            s_r            <= s_i;
-            isZ_r          <= isZ_i;
-            isInf_r        <= isInf_i;
-            isSNAN_r       <= isSNAN_i;
-            isQNAN_r       <= isQNAN_i;
-            doSqrt_r       <= doSqrt_i;         // It was necessary to sample the input value of doSqrt/doInvSqrt 
-            doInvSqrt_r    <= doInvSqrt_i;      // for the special condition detection part to work properly
+            doSqrt_r        <= doSqrt_i;         // It was necessary to sample the input value of doSqrt/doInvSqrt 
+            doInvSqrt_r     <= doInvSqrt_i;      // for the special condition detection part to work properly
         end
-        s_res_o        <= s_res;
-        e_res_o        <= e_res;
-        f_res_o        <= f_res;
-        valid_o        <= valid;
-        isOverflow_o   <= isOverflow;
-        isUnderflow_o  <= isUnderflow;
-        isToRound_o    <= isToRound;
+        e_res_preNorm_r <= e_res_preNorm;
+        s_res_o         <= s_res;
+        e_res_o         <= e_res;
+        f_res_o         <= f_res;
+        valid_o         <= valid;
+        isOverflow_o    <= isOverflow;
+        isUnderflow_o   <= isUnderflow;
+        isToRound_o     <= isToRound;
     end
 end
 
@@ -181,10 +183,6 @@ begin
         fs_f = {1'b0 , extF_i}; 
     else
         fs_f = {extF_i , 1'b0};
-//    if(extE_i[0]|nlz_i[0])
-//        fs_f = {extF_i , 1'b0};
-//    else
-//        fs_f = {1'b0 , extF_i};
 end
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -192,10 +190,13 @@ end
 ///////////////////////////////////////////////////////////////////////////////////////
 always_comb
 begin
+    e_res_preNorm = e_res_preNorm_r;
     if(doSqrt_i)
-        e_res_preNorm =   (LAMP_FLOAT_E_BIAS-1-NLZ_CEIL)/2 + ((NLZ_CEIL+extE_i-nlz_i)>>1) + 1; 
+        e_res_preNorm =   (LAMP_FLOAT_E_BIAS-1)/2 + ((extE_i-nlz_i)>>1) + 1; 
+//        e_res_preNorm =   (LAMP_FLOAT_E_BIAS-1-NLZ_CEIL)/2 + ((NLZ_CEIL+extE_i-nlz_i)>>1) + 1; 
     else if(doInvSqrt_i)
-        e_res_preNorm = (3*LAMP_FLOAT_E_BIAS-3+NLZ_CEIL)/2 - ((NLZ_CEIL+extE_i-nlz_i)>>1) + 1;
+        e_res_preNorm = (3*LAMP_FLOAT_E_BIAS-3)/2 - ((extE_i-nlz_i)>>1) + 1;
+//        e_res_preNorm = (3*LAMP_FLOAT_E_BIAS-3+NLZ_CEIL)/2 - ((NLZ_CEIL+extE_i-nlz_i)>>1) + 1;
 end
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -203,18 +204,18 @@ end
 ///////////////////////////////////////////////////////////////////////////////////////
 always_comb
 begin
-    //f_res_preNorm = fs_result;
+
     if(~f_res_preNorm[2*(1+LAMP_FLOAT_F_DW)-2])
     begin // CASE 00.1xxxx ----> 01.xxxx
         stickyBit         =|f_res_preNorm[0 +:2*(1+LAMP_FLOAT_F_DW)-(LAMP_FLOAT_F_DW+5-1)-1];
         f_res_postNorm    = f_res_preNorm[2*(1+LAMP_FLOAT_F_DW)-1-1 -: LAMP_FLOAT_F_DW+5];
-        e_res_postNorm    = e_res_preNorm - 1;
+        e_res_postNorm    = e_res_preNorm_r - 1;
     end
     else
     begin // CASE 01.xxxxx ----> 01.xxxx
         stickyBit         =|f_res_preNorm[0 +:2*(1+LAMP_FLOAT_F_DW)-(LAMP_FLOAT_F_DW+5-1)];
         f_res_postNorm    = f_res_preNorm[2*(1+LAMP_FLOAT_F_DW)-1 -: LAMP_FLOAT_F_DW+5];
-        e_res_postNorm    = e_res_preNorm;
+        e_res_postNorm    = e_res_preNorm_r;
     end
 
     f_res_postNorm[0] = stickyBit;
