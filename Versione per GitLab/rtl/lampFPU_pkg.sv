@@ -527,7 +527,7 @@ package lampFPU_pkg;
 	// NEW PART ADDED FOR SQRT ONLY
 	/////////////////////////////////////////////////////////////////////////////
 
-		//FUNC_approxInvSqrt not used for the moment
+		//FUNC_approxInvSqrt
 		function automatic logic[LAMP_APPROX_DW-1+1:0] FUNC_approxInvSqrt(
 							input [(1+1+LAMP_FLOAT_F_DW)-1:0] f_i
 					);
