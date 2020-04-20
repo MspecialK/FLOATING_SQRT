@@ -18,9 +18,6 @@
 // 16 bit floating point number [s]|[e]|[m]  [1]|[8]|[7]
 // The output is not normalized in this core, but in the sqrt module. 
 // 
-// To do:
-// 1) Time-Post synthesis behaviour analysis and optimization
-//
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 module lampFPU_fractSqrt(
@@ -53,7 +50,7 @@ logic           [2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-1:0]     aux_res;           
 
 logic           [2*(LAMP_FLOAT_F_DW+1)-1:0]                  result_o_nxt;
 logic                                                        valid_o_nxt;
-logic           [3:0]                                        i,i_nxt;                   //Counter up to five cycles. 
+logic           [$clog2(LAMP_APPROX_MULS)-1:0]               i,i_nxt;                   //Counter up to five cycles. 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                SERIAL BLOCK
@@ -104,7 +101,7 @@ inver_next    =   inver;
 valid_o_nxt   =   1'b0;
 ss_nxt        =   ss;
 i_nxt         =   i;
-result_o_nxt  =   16'b0000000000000000;
+result_o_nxt  =   'b0;
 
 case (ss)
 IDLE: /////////////////////////////////////////////////////////////////////////////////////// IDLE STATE
@@ -138,24 +135,8 @@ begin
             res_nxt =  aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-2-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];
         end else if (inver) begin 
             res_nxt = y; 
-        end
-        
-    end else begin
-            
-        aux_res     =   res*y;   // Change respect to the algorithm, we calculate the res_next 
-        res_nxt     =   aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-2-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];    
-            
-    end   
-    
-    if (i == 2) begin
-        
-        ss_nxt        =   IDLE;
-        
-        valid_o_nxt   =   1'b1;   //Go back to IDLE, we set the valid_o and we are ready in the same clock cycle to start another operation
-        result_o_nxt  =   aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-1-:(2*(LAMP_FLOAT_F_DW+1))];  //Returning the 16 most significant bits
-    
-    end      
-    
+        end 
+    end
 end
 STATE2: ///////////////////////////////////////////////////////////////////////// COMPUTATION STATE2
 begin
@@ -163,8 +144,16 @@ begin
     ss_nxt      =   STATE1;
     
     y_nxt       =   (2'b11<<(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2-2)) - (b>>1);
-    y_sqr_nxt   =   y_nxt*y_nxt;
-    i_nxt       =   i+1;  
+    y_sqr_nxt   =   y_nxt*y_nxt;                
+    aux_res     =   res*y_nxt;   // Change respect to the algorithm, we calculate the res_next 
+    res_nxt     =   aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-2-:(LAMP_FLOAT_F_DW+LAMP_PREC_DW+2)];
+    i_nxt       =   i+1;
+    
+    if (i == LAMP_APPROX_MULS - 1) begin
+        ss_nxt        =   IDLE;
+        valid_o_nxt   =   1'b1;   //Go back to IDLE, we set the valid_o and we are ready in the same clock cycle to start another operation
+        result_o_nxt  =   aux_res[2*(LAMP_FLOAT_F_DW+2+LAMP_PREC_DW)-1-:(2*(LAMP_FLOAT_F_DW+1))];  //Returning the 16 most significant bits
+    end
     
 end
 

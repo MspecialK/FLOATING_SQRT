@@ -17,9 +17,6 @@
 // right value to give to the fractSqrt module and then take care of the normalization process.
 // Special cases are also handled here.
 //
-// To do:
-// 1) Correct/complete normalization process (need to fix the elaboration and use of the sticky bit)
-// 2) Still need to check if the nlz signals are elaborated correctly
 //////////////////////////////////////////////////////////////////////////////////
 
 module lampFPU_sqrt(
@@ -193,10 +190,8 @@ begin
     e_res_preNorm = e_res_preNorm_r;
     if(doSqrt_i)
         e_res_preNorm =   (LAMP_FLOAT_E_BIAS-1)/2 + ((extE_i-nlz_i)>>1) + 1; 
-//        e_res_preNorm =   (LAMP_FLOAT_E_BIAS-1-NLZ_CEIL)/2 + ((NLZ_CEIL+extE_i-nlz_i)>>1) + 1; 
     else if(doInvSqrt_i)
         e_res_preNorm = (3*LAMP_FLOAT_E_BIAS-3)/2 - ((extE_i-nlz_i)>>1) + 1;
-//        e_res_preNorm = (3*LAMP_FLOAT_E_BIAS-3+NLZ_CEIL)/2 - ((NLZ_CEIL+extE_i-nlz_i)>>1) + 1;
 end
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -217,12 +212,9 @@ begin
         f_res_postNorm    = f_res_preNorm[2*(1+LAMP_FLOAT_F_DW)-1 -: LAMP_FLOAT_F_DW+5];
         e_res_postNorm    = e_res_preNorm_r;
     end
-
-    f_res_postNorm[0] = stickyBit;
     
-    ///////////////////////////////////////////////////////////////////////////////////
-    // HERE WE NEED TO CORRECT THE STICKY BIT CODE
-    ///////////////////////////////////////////////////////////////////////////////////
+    f_res_postNorm[1]  = f_res_postNorm[1] | stickyBit;
+    f_res_postNorm[0]  = stickyBit;
     
 end
 
